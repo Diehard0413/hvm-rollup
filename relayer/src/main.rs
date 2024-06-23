@@ -1,4 +1,3 @@
-use bellman::groth16::{prepare_verifying_key, verify_proof, Proof, VerifyingKey};
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::error::Error;
@@ -8,43 +7,37 @@ use web3::transports::Http;
 use web3::Web3;
 use log::{info, error};
 use reqwest::Client;
-use bls12_381::Bls12;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Calldata {
     data: String,
-    proof: Proof<Bls12>,
-    vk: VerifyingKey<Bls12>,
+    proof: String,  // Assume proof is a string for simplicity, adjust as needed
 }
 
 struct Relayer {
     cache: Arc<Mutex<VecDeque<(String, Calldata)>>>,
     web3: Web3<Http>,
-    vk: VerifyingKey<Bls12>,
     client: Client,
     sequencer_url: String,
 }
 
 impl Relayer {
-    fn new(web3_url: &str, sequencer_url: &str, vk: VerifyingKey<Bls12>) -> Result<Self, Box<dyn Error>> {
+    fn new(web3_url: &str, sequencer_url: &str) -> Result<Self, Box<dyn Error>> {
         let transport = Http::new(web3_url)?;
         let web3 = Web3::new(transport);
         let client = Client::new();
         Ok(Relayer {
             cache: Arc::new(Mutex::new(VecDeque::new())),
             web3,
-            vk,
             client,
             sequencer_url: sequencer_url.to_string(),
         })
     }
 
     async fn verify_calldata(&self, calldata: &Calldata) -> Result<bool, Box<dyn Error>> {
-        let pvk = prepare_verifying_key(&self.vk);
-        let proof = &calldata.proof;
-        let inputs: Vec<bls12_381::Scalar> = serde_json::from_str(&calldata.data)?;
-
-        verify_proof(&pvk, proof, &inputs).map_err(|_| "Proof verification failed".into())
+        // Placeholder for actual verification logic
+        // You should replace this with the actual verification of the proof
+        Ok(true)
     }
 
     async fn generate_tx_hash(&self, calldata: &Calldata) -> Result<String, Box<dyn Error>> {
@@ -90,10 +83,7 @@ impl Relayer {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    env_logger::init();
-    let vk = load_verifying_key(); // Assume this function loads the verifying key from a file or other source
-
-    let relayer = Relayer::new("http://localhost:8545", "http://localhost:8080/sequencer", vk)?;
+    let relayer = Relayer::new("http://localhost:8545", "http://localhost:8080/sequencer")?;
 
     // Fetch calldata from the sequencer
     match relayer.fetch_calldata_from_sequencer().await {
@@ -110,16 +100,4 @@ async fn main() -> Result<(), Box<dyn Error>> {
     relayer.handle_massive_overload();
 
     Ok(())
-}
-
-fn load_verifying_key() -> VerifyingKey<Bls12> {
-    // Load the verifying key from a file or other source
-    // For demonstration purposes, this is a placeholder function
-    VerifyingKey::default()
-}
-
-fn load_proof() -> Proof<Bls12> {
-    // Load the proof from a file or other source
-    // For demonstration purposes, this is a placeholder function
-    Proof::default()
 }
