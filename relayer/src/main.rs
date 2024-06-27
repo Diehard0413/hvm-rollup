@@ -11,8 +11,7 @@ use reqwest::Client;
 #[derive(Serialize, Deserialize, Debug)]
 struct Calldata {
     data: String,
-    proof: String,  // Assume proof is a string for simplicity, adjust as needed
-}
+    proof: String,
 
 struct Relayer {
     cache: Arc<Mutex<VecDeque<(String, Calldata)>>>,
@@ -36,7 +35,6 @@ impl Relayer {
 
     async fn verify_calldata(&self, calldata: &Calldata) -> Result<bool, Box<dyn Error>> {
         // Placeholder for actual verification logic
-        // You should replace this with the actual verification of the proof
         Ok(true)
     }
 
