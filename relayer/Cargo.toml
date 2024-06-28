@@ -5,48 +5,48 @@ edition = "2021"
 authors = ["MemechiKekamoto <memechi.kekamoto@pm.me>"]
 homepage = "https://github.com/Diehard0413/offchain-relayer"
 repository = "https://github.com/Diehard0413/offchain-relayer.git"
-description = "A offchain relayer for HVM2 infrastructure interacting with a Substrate-based blockchain"
+description = "A offchain relayer for fetching calldata from HVM2 infrastructure and relaying to QuantumFusion blockchain"
 
 [dependencies]
-clap = { version = "4.1.6", features = ["derive"] }
+tokio = { version = "1.35", features = ["full"] }
+tokio-tungstenite = { version = "0.19", features = ["native-tls"] }
+subxt = "0.34.0"
+subxt-macro = "0.34.0"
+subxt-metadata = "0.34.0"
+subxt-signer = "0.34.0"
+sp-core = { version = "28.0.0", package = "sp-core" }
+sp-runtime = { version = "31.0.0", package = "sp-runtime" }
+codec = { package = "parity-scale-codec", version = "3.6.1", features = ["derive"] }
+reqwest = { version = "0.11.27", features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.68"
+log = "0.4.17"
 env_logger = "0.10"
-futures-util = "0.3.26"
-hex = "0.4"
-log = "0.4"
-nostr = { version = "0.19.5", default-features = false }
-parking_lot = "0.12.1"
-reqwest = { version = "0.11", features = ["json"] }
-serde = { version = "1.0.155", features = ["derive"] }
-serde_json = "1.0.94"
-serde_with = "2.3.1"
-sha3 = "0.10"
-thiserror = "1.0.38"
-tokio = { version = "1.25.0", features = [
-    "rt",
-    "rt-multi-thread",
-    "net",
-    "time",
-    "macros",
-] }
-tokio-tungstenite = { version = "0.18.0", features = [
-    "rustls-tls-webpki-roots",
-] }
-url = "2.3.1"
-web3 = "0.18"
+url = "2.5.0"
+futures-util = "0.3.21"
+thiserror = "1.0.48"
+clap = { version = "4.3", features = ["derive"] }
+schnorrkel = { version = "0.11.4", package = "schnorrkel" }
 
 [dev-dependencies]
-criterion = "0.4.0"
-flume = "0.10.14"
-mockall = "0.11"
-tokio-test = "0.4"
+tokio-test = "0.4.4"
+mockall = "0.11.4"
 
-[features]
-default = []
-testnet = []
-mainnet = []
+[[bin]]
+name = "hvm-relayer"
+path = "src/main.rs"
+
+[lib]
+name = "hvm_relayer"
+path = "src/lib.rs"
 
 [profile.release]
 opt-level = 3
 lto = true
 codegen-units = 1
 panic = "abort"
+strip = true
+
+[profile.dev]
+opt-level = 0
+debug = true

@@ -1,81 +1,27 @@
-use nostr::prelude::{
-    rand,
-    rand::distributions::{Alphanumeric, DistString},
-    rand::Rng,
-};
-use std::net::SocketAddr;
-use url::Url;
+use sp_core::{H256, U256};
+use sp_runtime::traits::Hash;
 
-pub fn parse_interface(s: &str) -> Result<SocketAddr, String> {
-    Ok(format!("{}:0", s).parse().map_err(|_| "error format")?)
+fn u256_to_le_bytes(value: U256) -> [u8; 32] {
+    let mut bytes = [0u8; 32];
+    value.to_little_endian(&mut bytes);
+    bytes
 }
 
-pub fn parse_wsaddr(url: &Url) -> std::io::Result<SocketAddr> {
-    let addrs = url.socket_addrs(|| match url.scheme() {
-        "wss" => Some(443),
-        "ws" => Some(80),
-        _ => None,
-    })?;
-    Ok(addrs[0])
-}
-
-pub fn gen_hashtag() -> String {
-    let mut prefix = "offchain-bench-".to_owned();
-    let mut rng = rand::thread_rng();
-    prefix.push_str(&rng.gen_range(0..1000).to_string());
-    prefix
-}
-
-pub fn gen_req(id: Option<String>, tag: Option<String>, limit: usize) -> String {
-    let id = id.unwrap_or("sub".to_owned());
-    let tag = tag.unwrap_or_else(|| gen_hashtag());
-    format!(
-        "[\"REQ\", \"{}\", {{\"#t\": [\"{}\"], \"limit\": {}}}]",
-        id, tag, limit
-    )
-}
-
-pub fn gen_close(id: Option<String>) -> String {
-    let id = id.unwrap_or("sub".to_owned());
-    format!("[\"CLOSE\", \"{}\"]", id)
-}
-
-pub fn gen_note_event<T: Into<String>>(content: T) -> String {
-    let key = nostr::Keys::generate();
-    let tags = vec![
-        nostr::Tag::PubKey(key.public_key(), None),
-        nostr::Tag::Event(
-            nostr::EventId::from_hex(
-                "378f145897eea948952674269945e88612420db35791784abf0616b4fed56ef7",
-            )
-            .unwrap(),
-            None,
-            None,
-        ),
-        nostr::Tag::Hashtag("offchain-relayer-".to_owned()),
-        nostr::Tag::Hashtag(gen_hashtag()),
-    ];
-    let builder = nostr::EventBuilder::new_text_note(content, &tags);
-    let event = builder.to_event(&key).unwrap();
-    nostr::ClientMessage::new_event(event).as_json()
-}
-
-pub fn gen_string(size: usize) -> String {
-    Alphanumeric.sample_string(&mut rand::thread_rng(), size)
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::util::gen_string;
-
-    use super::{gen_close, gen_req};
-    #[test]
-    fn generate() {
-        assert_eq!(
-            gen_req(Some("id".to_owned()), Some("tag".to_owned()), 1),
-            r###"["REQ", "id", {"#t": ["tag"], "limit": 1}]"###
-        );
-        assert_eq!(gen_close(Some("id".to_owned())), r#"["CLOSE", "id"]"#);
-        assert_eq!(gen_string(10).len(), 10);
+pub fn verify_calldata(data: &[u8], proof: &[u8], _nonce: U256) -> bool {
+    if proof.len() < 32 {
+        return false;
     }
+
+    let hash = sp_runtime::traits::BlakeTwo256::hash(data);
+    let hash_bytes = hash.as_ref();
+
+    hash_bytes.starts_with(&proof[..8])
+}
+
+pub fn generate_tx_hash(data: &[u8], proof: &[u8], nonce: U256) -> H256 {
+    let mut input = data.to_vec();
+    input.extend_from_slice(proof);
+    input.extend_from_slice(&u256_to_le_bytes(nonce));
+
+    sp_runtime::traits::BlakeTwo256::hash(&input)
 }
