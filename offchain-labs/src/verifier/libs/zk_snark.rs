@@ -1,7 +1,7 @@
 use crate::error::HVMError;
 use crate::zk_rollup::Proof;
 use super::super::VerifierLibs;
-use bellman::groth16;
+use bellman::{Circuit, ConstraintSystem, SynthesisError, groth16};
 use bls12_381::Bls12;
 
 pub struct ZKSnarkLibs {
