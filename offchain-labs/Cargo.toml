@@ -1,6 +1,24 @@
 [package]
-name = "offchain-labs"
+name = "offchain_labs"
 version = "0.1.0"
 edition = "2021"
+authors = ["Diehard0413 <diehard0413@gmail.com>"]
+homepage = "https://github.com/Diehard0413/hvm-rollup"
+repository = "https://github.com/Diehard0413/hvm-rollup.git"
+description = "HVM Infrastructure with ZK Rollup Technology"
 
 [dependencies]
+thiserror = "1.0.48"
+log = "0.4.17"
+env_logger = "0.10"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.68"
+tokio = { version = "1.35", features = ["full"] }
+async-trait = "0.1"
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "savvy_benchmarks"
+harness = false
