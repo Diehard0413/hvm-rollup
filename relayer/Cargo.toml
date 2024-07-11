@@ -3,8 +3,8 @@ name = "hvm_relayer"
 version = "0.1.0"
 edition = "2021"
 authors = ["MemechiKekamoto <memechi.kekamoto@pm.me>"]
-homepage = "https://github.com/Diehard0413/hvm-rollup"
-repository = "https://github.com/Diehard0413/hvm-rollup.git"
+homepage = "https://github.com/MemechiKekamoto/hvm-rollup"
+repository = "https://github.com/MemechiKekamoto/hvm-rollup.git"
 description = "A offchain relayer for fetching calldata from HVM2 infrastructure and relaying to QuantumFusion blockchain"
 
 [dependencies]
