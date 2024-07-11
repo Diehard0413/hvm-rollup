@@ -33,4 +33,8 @@ impl Sequencer {
     pub fn apply_proof(&mut self, proof: Proof) -> Result<(), HVMError> {
         self.state.apply_proof(&proof)
     }
+
+    pub fn get_current_state(&self) -> State {
+        self.state.clone()
+    }
 }

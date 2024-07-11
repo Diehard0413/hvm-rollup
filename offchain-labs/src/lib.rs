@@ -39,4 +39,8 @@ impl OffchainLabs {
 
         Ok(is_valid)
     }
+
+    pub fn get_current_state(&self) -> Result<zk_rollup::State, HVMError> {
+        Ok(self.sequencer.get_current_state())
+    }
 }

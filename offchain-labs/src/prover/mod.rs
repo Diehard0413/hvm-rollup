@@ -1,8 +1,8 @@
-mod strategies;
+mod libs;
 
 use crate::error::HVMError;
 use crate::zk_rollup::Proof;
-use strategies::ZKSnarkLibs;
+use libs::ZKSnarkLibs;
 
 pub struct Prover {
     strategy: Box<dyn ProverLibs>,

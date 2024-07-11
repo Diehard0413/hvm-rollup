@@ -15,10 +15,14 @@ async fn test_end_to_end_workflow() {
         vec![9, 10, 11, 12],
     ];
 
-    for tx in transactions {
-        let result = hvm.process_transaction(&tx);
-        assert!(result.is_ok());
+    for (i, tx) in transactions.iter().enumerate() {
+        let result = hvm.process_transaction(tx);
+        assert!(result.is_ok(), "Failed to process transaction {}", i);
+        let is_valid = result.unwrap();
+        assert!(is_valid, "Transaction {} was invalid", i);
     }
 
-    // Add more assertions to verify the final state, etc.
+    let final_state = hvm.get_current_state().unwrap();
+    assert_eq!(final_state.balance(), 3, "Unexpected final balance");
+    assert_eq!(final_state.nonce(), 3, "Unexpected final nonce");
 }

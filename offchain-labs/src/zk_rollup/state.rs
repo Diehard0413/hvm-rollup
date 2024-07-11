@@ -1,14 +1,29 @@
 use super::Proof;
 use crate::error::HVMError;
+use serde::{Serialize, Deserialize};
 
-#[derive(Default)]
+#[derive(Default, Clone, Serialize, Deserialize)]
 pub struct State {
-    // Define state fields
+    pub balance: u64,
+    pub nonce: u64,
 }
 
 impl State {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     pub fn apply_proof(&mut self, proof: &Proof) -> Result<(), HVMError> {
-        // Implement state transition logic
-        todo!("Implement state transition logic")
+        self.balance += 1;
+        self.nonce += 1;
+        Ok(())
+    }
+
+    pub fn balance(&self) -> u64 {
+        self.balance
+    }
+
+    pub fn nonce(&self) -> u64 {
+        self.nonce
     }
 }
