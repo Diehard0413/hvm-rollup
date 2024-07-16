@@ -1,5 +1,6 @@
 use crate::error::HVMError;
 use crate::zk_rollup::Proof;
+use crate::sequencer::Batch;
 use super::super::ProverLibs;
 use bellman::{groth16, Circuit, ConstraintSystem, SynthesisError};
 use bls12_381::Bls12;
@@ -18,8 +19,8 @@ impl ZKSnarkLibs {
 }
 
 impl ProverLibs for ZKSnarkLibs {
-    fn generate_proof(&self, input: &[u8]) -> Result<Proof, HVMError> {
-        let circuit = DummyCircuit { x: Some(input[0] as u64) };
+    fn generate_proof(&self, batch: &Batch) -> Result<Proof, HVMError> {
+        let circuit = DummyCircuit { x: Some(batch.transactions().len() as u64) };
         
         let proof = groth16::create_random_proof(circuit, &self.proving_key, &mut thread_rng())
             .map_err(|e| HVMError::Prover(format!("Failed to generate proof: {}", e)))?;
