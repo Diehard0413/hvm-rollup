@@ -4,7 +4,7 @@ mod transaction;
 use crate::error::HVMError;
 use crate::zk_rollup::{Proof, State};
 use crate::config::SequencerConfig;
-use batch::Batch;
+pub use batch::Batch;
 pub use transaction::Transaction;
 use std::time::{Duration, Instant};
 

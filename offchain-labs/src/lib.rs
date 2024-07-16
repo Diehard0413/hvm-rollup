@@ -5,11 +5,12 @@ pub mod sequencer;
 pub mod verifier;
 pub mod zk_rollup;
 
-use config::Config;
+pub use config::Config;
 use error::HVMError;
 use sequencer::Transaction;
 
 pub struct OffchainLabs {
+    #[allow(dead_code)]
     config: Config,
     prover: prover::Prover,
     sequencer: sequencer::Sequencer,
