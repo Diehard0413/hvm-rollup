@@ -1,12 +1,9 @@
 #[warn(unused_imports)]
 use offchain_labs::{
-    // config::{Config, SequencerConfig},
     config::SequencerConfig,
-    // sequencer::{Sequencer, Transaction, Batch},
     sequencer::{Sequencer, Transaction},
     zk_rollup::{State, Proof},
 };
-// use std::time::Duration;
 
 fn create_test_sequencer() -> Sequencer {
     let config = SequencerConfig {
