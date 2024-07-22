@@ -8,12 +8,13 @@ pub mod zk_rollup;
 pub use config::Config;
 use error::HVMError;
 use sequencer::Transaction;
-use prover::ZKProver;
+use prover::{BatchCircuit, ZKProver};
 use verifier::ZKVerifier;
 
-use ark_bn254::Bn254;
+use ark_bn254::{Bn254, Fr};
 use ark_groth16::Groth16;
 use ark_snark::SNARK;
+use ark_std::rand::thread_rng;
 
 pub struct OffchainLabs {
     prover: ZKProver,
@@ -23,15 +24,15 @@ pub struct OffchainLabs {
 
 impl OffchainLabs {
     pub fn new(config: Config) -> Result<Self, HVMError> {
-        let rng = &mut ark_std::rand::thread_rng();
-        let circuit = prover::BatchCircuit::new(&sequencer::Batch::new(vec![]));
+        let mut rng = thread_rng();
+        let circuit = BatchCircuit::<Fr>::new(&sequencer::Batch::new(vec![]));
         
-        let (pk, vk) = Groth16::<Bn254>::circuit_specific_setup(circuit, rng)
+        let (pk, vk) = Groth16::<Bn254>::circuit_specific_setup(circuit, &mut rng)
             .map_err(|e| HVMError::Setup(format!("Failed to generate ZK-SNARK keys: {}", e)))?;
         
-        let prover = prover::create_zk_prover(pk);
+        let prover = ZKProver::new(pk);
         let sequencer = sequencer::Sequencer::new(zk_rollup::State::default(), config.sequencer_config.clone());
-        let verifier = verifier::create_zk_verifier(vk);
+        let verifier = ZKVerifier::new(vk);
 
         Ok(Self {
             prover,
@@ -43,7 +44,7 @@ impl OffchainLabs {
     pub fn process_transaction(&mut self, transaction: Transaction) -> Result<bool, HVMError> {
         println!("Processing transaction: {:?}", transaction);
         self.sequencer.process_transaction(transaction)?;
-
+    
         if let Some(batch) = self.sequencer.create_batch(true)? {
             println!("Batch created: {:?}", batch);
             let proof = self.prover.generate_proof(&batch)?;

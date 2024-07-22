@@ -1,5 +1,5 @@
 use offchain_labs::{Config, OffchainLabs};
-use offchain_labs::sequencer::Batch;
+use offchain_labs::sequencer::Transaction;
 use offchain_labs::config::{ProverConfig, VerifierConfig, SequencerConfig};
 use std::path::PathBuf;
 

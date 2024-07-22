@@ -1,13 +1,11 @@
 use crate::error::HVMError;
 use crate::zk_rollup::Proof;
-use crate::sequencer::{Batch, Transaction};
-
-use ark_relations::r1cs::{ConstraintSynthesizer, ConstraintSystemRef, SynthesisError};
+use crate::sequencer::Batch;
 use ark_bn254::{Bn254, Fr};
 use ark_groth16::{Groth16, ProvingKey};
 use ark_snark::SNARK;
 use ark_serialize::CanonicalSerialize;
-use ark_std::One;
+use ark_std::rand::thread_rng;
 use ark_relations::lc;
 
 pub struct ZKProver {
@@ -20,25 +18,23 @@ impl ZKProver {
     }
 
     pub fn generate_proof(&self, batch: &Batch) -> Result<Proof, HVMError> {
-        let circuit = BatchCircuit::new(batch);
+        println!("Generating proof for batch: {:?}", batch);
+        let circuit = BatchCircuit::<Fr>::new(batch);
         
-        let rng = &mut ark_std::rand::thread_rng();
-        let proof = Groth16::<Bn254>::prove(&self.proving_key, circuit, rng)
+        let mut rng = thread_rng();
+        println!("Proving key: {:?}", self.proving_key);
+        let proof = Groth16::<Bn254>::prove(&self.proving_key, circuit, &mut rng)
             .map_err(|e| HVMError::Prover(format!("Failed to generate proof: {}", e)))?;
+
+        println!("Generated Groth16 proof: {:?}", proof);
         
         let mut proof_bytes = Vec::new();
         proof.serialize_uncompressed(&mut proof_bytes)
             .map_err(|e| HVMError::Prover(format!("Failed to serialize proof: {}", e)))?;
+
+        println!("Serialized proof bytes: {:?}", proof_bytes);
         
         Ok(Proof::new(proof_bytes))
-    }
-
-    pub fn create_dummy_proof(&self) -> Result<Proof, HVMError> {
-        let dummy_batch = Batch::new(vec![
-            Transaction::new("Alice".to_string(), "Bob".to_string(), 100, 1),
-            Transaction::new("Bob".to_string(), "Charlie".to_string(), 50, 2),
-        ]);
-        self.generate_proof(&dummy_batch)
     }
 }
 
@@ -46,19 +42,23 @@ pub fn create_zk_prover(proving_key: ProvingKey<Bn254>) -> ZKProver {
     ZKProver::new(proving_key)
 }
 
-pub struct BatchCircuit {
-    transactions: Vec<(Fr, Fr)>,
+use ark_relations::r1cs::{ConstraintSynthesizer, ConstraintSystemRef, SynthesisError};
+use ark_ff::Field;
+
+pub struct BatchCircuit<F: Field> {
+    transactions: Vec<(F, F, F)>,
 }
 
-impl BatchCircuit {
+impl<F: Field> BatchCircuit<F> {
     pub fn new(batch: &Batch) -> Self {
         let transactions = batch
             .transactions()
             .iter()
             .map(|tx| {
                 (
-                    Fr::from(tx.amount as u64),
-                    Fr::from(tx.nonce as u64),
+                    F::from(tx.amount as u64),
+                    F::from(tx.nonce as u64),
+                    F::from(1u64),
                 )
             })
             .collect();
@@ -67,16 +67,21 @@ impl BatchCircuit {
     }
 }
 
-impl ConstraintSynthesizer<Fr> for BatchCircuit {
-    fn generate_constraints(self, cs: ConstraintSystemRef<Fr>) -> Result<(), SynthesisError> {
-        for (amount, nonce) in self.transactions {
-            let amount_var = cs.new_witness_variable(|| Ok(amount))?;
-            let nonce_var = cs.new_witness_variable(|| Ok(nonce))?;
+impl<F: Field> ConstraintSynthesizer<F> for BatchCircuit<F> {
+    fn generate_constraints(self, cs: ConstraintSystemRef<F>) -> Result<(), SynthesisError> {
+        for (_i, (amount, nonce, _)) in self.transactions.iter().enumerate() {
+            let amount_var = cs.new_witness_variable(|| Ok(*amount))?;
+            let nonce_var = cs.new_witness_variable(|| Ok(*nonce))?;
+            
+            let product_var = cs.new_witness_variable(|| {
+                let product = *amount * *nonce;
+                Ok(product)
+            })?;
 
             cs.enforce_constraint(
-                lc!() + amount_var + nonce_var,
-                lc!() + (Fr::one(), ark_relations::r1cs::Variable::One),
-                lc!() + amount_var + nonce_var
+                lc!() + amount_var,
+                lc!() + nonce_var,
+                lc!() + product_var
             )?;
         }
         
