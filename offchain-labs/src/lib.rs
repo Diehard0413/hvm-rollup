@@ -20,6 +20,7 @@ pub struct OffchainLabs {
     prover: ZKProver,
     sequencer: sequencer::Sequencer,
     verifier: ZKVerifier,
+    public_inputs: Vec<Fr>,
 }
 
 impl OffchainLabs {
@@ -32,12 +33,15 @@ impl OffchainLabs {
         
         let prover = ZKProver::new(pk);
         let sequencer = sequencer::Sequencer::new(zk_rollup::State::default(), config.sequencer_config.clone());
-        let verifier = ZKVerifier::new(vk);
+        let verifier = ZKVerifier::new(vk.clone());
+
+        let public_inputs = vec![Fr::from(1u64); vk.gamma_abc_g1.len() - 1];
 
         Ok(Self {
             prover,
             sequencer,
             verifier,
+            public_inputs,
         })
     }
 
@@ -48,8 +52,9 @@ impl OffchainLabs {
         if let Some(batch) = self.sequencer.create_batch(true)? {
             println!("Batch created: {:?}", batch);
             let proof = self.prover.generate_proof(&batch)?;
-            println!("Proof generated: {:?}", proof);
-            let is_valid = self.verifier.verify_proof(&proof)?;
+            println!("Proof generated: {:?}", proof);           
+
+            let is_valid = self.verifier.verify_proof(&proof, &self.public_inputs)?;
             println!("Proof verification result: {}", is_valid);
             
             if is_valid {

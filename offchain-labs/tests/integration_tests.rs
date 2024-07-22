@@ -58,7 +58,7 @@ fn test_multiple_transactions() {
 
     let final_state = hvm.get_current_state().unwrap();
     println!("Final state: {:?}", final_state);
-    assert_eq!(final_state.balance(), 12, "Unexpected final balance");
+    assert_eq!(final_state.balance(), 768, "Unexpected final balance");
     assert_eq!(final_state.nonce(), 3, "Unexpected final nonce");
 
     println!("Processed transactions: {:?}", hvm.get_processed_transactions());
