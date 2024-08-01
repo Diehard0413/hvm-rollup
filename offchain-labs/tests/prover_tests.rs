@@ -1,7 +1,7 @@
 use offchain_labs::{Config, OffchainLabs};
 use offchain_labs::sequencer::Transaction;
 use offchain_labs::config::{ProverConfig, VerifierConfig, SequencerConfig};
-use offchain_labs::bend::BendProgram; // Correct import for BendProgram
+use offchain_labs::bend::BendProgram;
 use std::path::PathBuf;
 
 fn create_test_config() -> Config {
@@ -31,9 +31,9 @@ async fn test_prover_generate_proof() {
     let mut hvm = OffchainLabs::new(config).unwrap();
 
     let transactions = vec![
-        Transaction::new("Alice".to_string(), "Bob".to_string(), vec![100], 1), // Pass Vec<u8> for amount
-        Transaction::new("Bob".to_string(), "Charlie".to_string(), vec![50], 2), // Pass Vec<u8> for amount
-        Transaction::new("Charlie".to_string(), "Alice".to_string(), vec![25], 3), // Pass Vec<u8> for amount
+        Transaction::new("Alice".to_string(), "Bob".to_string(), vec![100], 1),
+        Transaction::new("Bob".to_string(), "Charlie".to_string(), vec![50], 2),
+        Transaction::new("Charlie".to_string(), "Alice".to_string(), vec![25], 3),
     ];
 
     for (i, tx) in transactions.into_iter().enumerate() {
