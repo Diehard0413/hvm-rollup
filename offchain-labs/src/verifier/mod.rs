@@ -14,7 +14,6 @@ pub struct ZKVerifier {
 
 impl ZKVerifier {
     pub fn new(verifying_key: VerifyingKey<Bn254>) -> Self {
-        println!("Creating new ZKVerifier with verifying key: {:?}", verifying_key);
         let prepared_verifying_key = Groth16::<Bn254>::process_vk(&verifying_key).unwrap();
         Self { verifying_key: prepared_verifying_key }
     }

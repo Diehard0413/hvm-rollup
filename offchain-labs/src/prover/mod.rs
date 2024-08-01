@@ -8,17 +8,21 @@ use ark_groth16::{Groth16, ProvingKey};
 use ark_snark::SNARK;
 use ark_serialize::CanonicalSerialize;
 use ark_std::rand::thread_rng;
-use wasmer::{Store, Module, Instance};
-use wasmer_compiler_cranelift::Cranelift;
+use wasmer::{Store, Module, Instance, Cranelift};
 use std::time::Instant;
+use std::collections::HashMap;
 
 pub struct ZKProver {
     proving_key: ProvingKey<Bn254>,
+    program_cache: HashMap<String, BendProgram>,
 }
 
 impl ZKProver {
     pub fn new(proving_key: ProvingKey<Bn254>) -> Self {
-        Self { proving_key }
+        Self {
+            proving_key,
+            program_cache: HashMap::new(),
+        }
     }
 
     pub fn generate_proof(&self, batch: &Batch) -> Result<Proof, HVMError> {
@@ -48,8 +52,12 @@ impl ZKProver {
         Ok(Proof::new(proof_bytes))
     }
 
-    fn get_program_for_transaction(&self, _transaction: &Transaction) -> Result<&BendProgram, HVMError> {
-        unimplemented!()
+    fn get_program_for_transaction(&self, transaction: &Transaction) -> Result<&BendProgram, HVMError> {
+        let program_id = &transaction.program_id;
+        println!("Program Id: {:?}", program_id);
+
+        self.program_cache.get(program_id)
+            .ok_or_else(|| HVMError::Prover(format!("Program not found for ID: {}", program_id)))
     }
 
     pub fn estimate_resource_usage(&self, program: &BendProgram) -> Result<ResourceUsage, HVMError> {
@@ -82,7 +90,17 @@ impl ZKProver {
     }
 
     pub fn optimize_program(&self, program: &BendProgram) -> Result<BendProgram, HVMError> {
-        Ok(program.clone())
+        let optimized_bytecode = program.bytecode.clone();
+
+        Ok(BendProgram::new(
+            optimized_bytecode,
+            program.metadata.clone(),
+            program.author.clone()
+        ))
+    }
+
+    pub fn add_program(&mut self, program: BendProgram) {
+        self.program_cache.insert(program.id().to_string(), program);
     }
 }
 

@@ -6,6 +6,7 @@ use ark_relations::lc;
 use serde::{Serialize, Deserialize};
 use sha2::{Sha256, Digest};
 use wasmer::{Store, Module, Instance, Value, imports, Memory};
+use log::{error, debug};
 
 pub mod storage;
 
@@ -41,19 +42,27 @@ impl BendProgram {
         let import_object = imports! {};
         let instance = Instance::new(&mut store, &module, &import_object)
             .map_err(|e| HVMError::Execution(format!("Failed to instantiate module: {}", e)))?;
-
+    
         let memory = instance.exports.get_memory("memory")
-            .map_err(|e| HVMError::Execution(format!("Failed to get memory: {}", e)))?;
-
-        self.write_inputs_to_memory(&store, memory, &inputs)?;
-
+            .map_err(|e| HVMError::Execution(format!("Module does not export memory: {}", e)))?;
+    
+        self.write_inputs_to_memory(&store, &memory, &inputs)?;
+    
         let run = instance.exports.get_function("run")
             .map_err(|e| HVMError::Execution(format!("Failed to get run function: {}", e)))?;
-
-        let results = run.call(&mut store, &[])
-            .map_err(|e| HVMError::Execution(format!("Failed to execute program: {}", e)))?;
-
-        self.read_outputs_from_memory(&store, memory, &results)
+    
+        debug!("Executing WebAssembly module");
+        let result = run.call(&mut store, &[]);
+        match result {
+            Ok(output) => {
+                debug!("WebAssembly execution successful");
+                self.read_outputs_from_memory(&store, &memory, &output)
+            },
+            Err(e) => {
+                error!("WebAssembly execution failed: {}", e);
+                Err(HVMError::Execution(format!("Failed to execute program: {}", e)))
+            }
+        }
     }
 
     fn write_inputs_to_memory(&self, store: &Store, memory: &Memory, inputs: &[u8]) -> Result<(), HVMError> {
